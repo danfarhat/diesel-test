@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Diesel Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="font-family:sans-serif; margin:40px; background:#fafafa;">
+  <div style="max-width:700px; margin:auto; background:white; padding:20px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+    <h2>ESP8266 Random Data Tester</h2>
+    <p>Targeting Device ID: <strong id="dev-id" style="color:#3498db;">Loading...</strong></p>
+    <div style="position:relative; height:40vh;"><canvas id="myChart"></canvas></div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const deviceID = urlParams.get('id'); // Get ?id=from URL
+    
+    // CHANGE THIS TO YOUR EXACT GITHUB USERNAME
+    const githubUser = "YOUR_GITHUB_USERNAME"; 
+    const repo = "diesel-test";
+
+    if(!deviceID) {
+      document.getElementById('dev-id').innerText = "ERROR: Missing ?id= in URL";
+    } else {
+      document.getElementById('dev-id').innerText = deviceID;
+      
+      // Fetch the CSV file that the ESP8266 uploaded
+      fetch(`https://${githubUser}.github.io/${repo}/devices/${deviceID}.csv`, { cache: "no-store" })
+        .then(res => { if(!res.ok) throw new Error("No data found yet."); return res.text(); })
+        .then(csv => {
+          const lines = csv.trim().split('\n');
+          const labels = [], values = [];
+          lines.forEach(line => {
+            const parts = line.split(',');
+            if(parts.length >= 2) {
+              labels.push(parts[0]); // Reading Index/Time
+              values.push(parseFloat(parts[1])); // Random Liter Count
+            }
+          });
+          
+          new Chart(document.getElementById('myChart'), {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{ label: 'Simulated Liters', data: values, borderColor: '#2ecc71', tension: 0.1 }]
+            }
+          });
+        }).catch(err => document.getElementById('dev-id').innerText = err.message);
+    }
+  </script>
+</body>
+</html>
